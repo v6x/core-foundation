@@ -214,12 +214,36 @@ impl CTFontDescriptor {
         }
     }
 
+    fn get_string_localized_attribute(&self, attribute: CFStringRef) -> Option<String> {
+        unsafe {
+            let value = CTFontDescriptorCopyLocalizedAttribute(
+                self.0,
+                attribute,
+                &mut std::ptr::null()
+            );
+            if value.is_null() {
+                return None
+            }
+
+            let value = CFType::wrap_under_create_rule(value);
+            assert!(value.instance_of::<CFString>());
+            let s = CFString::wrap_under_get_rule(value.as_CFTypeRef() as CFStringRef);
+            Some(s.to_string())
+        }
+    }
 }
 
 impl CTFontDescriptor {
     pub fn family_name(&self) -> String {
         unsafe {
             let value = self.get_string_attribute(kCTFontFamilyNameAttribute);
+            value.expect("A font must have a non-null family name.")
+        }
+    }
+
+    pub fn localized_family_name(&self) -> String {
+        unsafe {
+            let value = self.get_string_localized_attribute(kCTFontFamilyNameAttribute);
             value.expect("A font must have a non-null family name.")
         }
     }
